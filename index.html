@@ -85,10 +85,10 @@ footer { margin-top:1rem; font-size:.7rem; color:#555; text-align:center;}
 </div>
 
 <script>
-const TOTAL_QUESTIONS = 20; // ここで総問題数
-const POINT_PER_Q = 5;      // 1問5点 → 20問で100点
+const TOTAL_QUESTIONS = 20;
+const POINT_PER_Q = 5;
 
-// データ
+// 元データ
 const data = [
   {name:'ACE阻害薬（エナラプリル等）', effect:'up', explanation:'アルドステロン低下→K排泄低下で高カリウム血症。'},
   {name:'ARB（ロサルタン等）', effect:'up', explanation:'ACE阻害薬と同様にアルドステロン低下。'},
@@ -113,10 +113,30 @@ const data = [
   {name:'代謝性アルカローシス', effect:'down', explanation:'H/Kシフトで血清K低下。'}
 ];
 
-let current=null, answered=false, correct=0, total=0;
+let questionList = [];  // 重複なし出題用
+let nextIndex = 0;
+let current = null;
+let answered = false;
+let correct = 0, total = 0;
+
+// Fisher-Yatesシャッフル
+function shuffle(arr){
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
 
 function startGame(){
   document.getElementById('startScreen').style.display='none';
+  // シャッフルして20問分だけ取得（データ数が少なければ全件）
+  questionList = shuffle(data);
+  if(questionList.length > TOTAL_QUESTIONS){
+    questionList = questionList.slice(0, TOTAL_QUESTIONS);
+  }
+  nextIndex = 0;
   updateRemain();
   nextQuestion();
 }
@@ -141,7 +161,8 @@ function nextQuestion(){
     return;
   }
   answered=false;
-  current = data[Math.floor(Math.random()*data.length)];
+  current = questionList[nextIndex]; // 順番に
+  nextIndex++;
   document.getElementById('item').textContent=current.name;
   document.getElementById('result').textContent='';
   document.getElementById('result').className='';
@@ -173,8 +194,7 @@ function answer(choice){
 }
 
 function endGame(){
-  // 点数計算
-  const score = correct * POINT_PER_Q; // 100点満点
+  const score = correct * POINT_PER_Q;
   document.getElementById('finalScore').textContent = `あなたの得点：${score} 点 / 100点`;
   document.getElementById('finalDetail').textContent = `正解数 ${correct} / ${TOTAL_QUESTIONS}（正答率 ${(correct/TOTAL_QUESTIONS*100).toFixed(1)}%）`;
   document.getElementById('endScreen').style.display='flex';
