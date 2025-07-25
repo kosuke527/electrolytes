@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ja">
+<meta charset="utf-8">
+<title>電解質ゲーム：カリウム編</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --ok:#28a745;
+  --ng:#dc3545;
+  --card-bg:#ffffffdd;
+}
+body {
+  margin:0;
+  font-family: "Helvetica Neue",system-ui,sans-serif;
+  background: linear-gradient(135deg,#89f7fe,#66a6ff);
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  padding:1rem;
+}
+h1 { margin:0 0 .5rem; font-size:1.5rem; text-align:center; }
+#game {
+  width:100%; max-width:650px;
+  background:var(--card-bg);
+  backdrop-filter: blur(6px);
+  border-radius:18px;
+  padding:1rem 1.2rem 2rem;
+  box-shadow:0 8px 24px rgba(0,0,0,.2);
+  position:relative;
+  overflow:hidden;
+}
+#desc { margin:.2rem 0 1rem; font-size:.95rem; color:#333;}
+#scoreBarWrapper {
+  background:#eee; border-radius:999px; overflow:hidden;
+  height:14px; margin:.5rem 0 1rem;
+}
+#scoreBar {height:100%; width:0%; background:linear-gradient(90deg,#4ade80,#16a34a);}
+#card {text-align:center;}
+#item {
+  font-size:1.3rem; font-weight:600;
+  min-height:2.6rem; padding:.4rem .5rem; border-radius:6px;
+  background:#f5f7ff;
+  display:flex; align-items:center; justify-content:center;
+}
+.buttons { margin-top:.7rem; }
+button {
+  cursor:pointer;
+  border:none;
+  border-radius:8px;
+  padding:.6rem 1.1rem;
+  font-size:1.05rem;
+  margin:.2rem .3rem;
+  font-weight:600;
+  background:#3478f6;
+  color:#fff;
+  transition:.2s;
+}
+button:hover { filter:brightness(1.1); }
+button.secondary { background:#888; }
+#result { font-weight:bold; margin-top:.6rem; font-size:1.2rem; }
+#result.ok { color:var(--ok); }
+#result.ng { color:var(--ng); }
+#explanation { margin-top:.2rem; font-size:.9rem; line-height:1.4; }
+footer { margin-top:1rem; font-size:.7rem; color:#555; text-align:center;}
+#scoreText { font-size:.9rem; font-weight:600; }
+
+#startScreen {
+  position:absolute; inset:0;
+  background:linear-gradient(135deg,#ffe259,#ffa751);
+  display:flex; flex-direction:column;
+  justify-content:center; align-items:center;
+  gap:1rem; text-align:center;
+}
+#startScreen h2 {margin:0;}
+#startScreen button {background:#ff5e62;}
+.confetti {
+  position:absolute; width:10px; height:10px;
+  background:var(--c);
+  top:-10px; left:0;
+  opacity:.9; border-radius:2px;
+  animation:fall 1s linear forwards;
+}
+@keyframes fall {
+  to { transform:translateY(350px) rotate(720deg); opacity:0; }
+}
+</style>
+<body>
+<div id="game">
+  <div id="startScreen">
+    <h2>🎮 電解質ゲーム：カリウム編</h2>
+    <p style="max-width:320px">病態や薬剤が出たら、血清カリウムを<br><b>上げる</b>か<b>下げる</b>かタップして答えよう！</p>
+    <button onclick="startGame()">ゲーム開始 ▶</button>
+  </div>
+
+  <h1>電解質ゲーム：カリウム編</h1>
+  <div id="desc">表示された <strong>病態 / 薬剤</strong> は血清カリウムを「上げる」か「下げる」か？</div>
+  <div id="scoreText">スコア: <span id="correct">0</span>/<span id="total">0</span></div>
+  <div id="scoreBarWrapper"><div id="scoreBar"></div></div>
+
+  <div id="card">
+    <div id="item"></div>
+    <div class="buttons">
+      <button onclick="answer('up')">🔺 上げる</button>
+      <button onclick="answer('down')">🔻 下げる</button>
+      <button onclick="nextQuestion()" id="nextBtn" class="secondary" style="display:none;">次の問題 ▶</button>
+    </div>
+    <div id="result"></div>
+    <div id="explanation"></div>
+  </div>
+
+  <footer>※教育用サンプル。実臨床では患者背景を考慮してください。</footer>
+</div>
+
+<script>
+// データ
+const data = [
+  {name:'ACE阻害薬（エナラプリル等）', effect:'up', explanation:'アルドステロン低下→K排泄低下で高カリウム血症。'},
+  {name:'ARB（ロサルタン等）', effect:'up', explanation:'ACE阻害薬と同様にアルドステロン低下。'},
+  {name:'スピロノラクトン／エプレレノン', effect:'up', explanation:'K保持性利尿薬で集合管でK排泄を抑制。'},
+  {name:'トリメトプリム', effect:'up', explanation:'ENaC阻害作用→K排泄低下。'},
+  {name:'シクロスポリン / タクロリムス', effect:'up', explanation:'低アルドステロン作用＋腎機能低下。'},
+  {name:'NSAIDs', effect:'up', explanation:'腎血流・レニン低下→アルドステロン低下。'},
+  {name:'ヘパリン', effect:'up', explanation:'アルドステロン合成抑制。'},
+  {name:'ジゴキシン中毒', effect:'up', explanation:'Na/K-ATPase阻害で細胞外K上昇。'},
+  {name:'横紋筋融解症', effect:'up', explanation:'細胞内K放出。'},
+  {name:'代謝性アシドーシス（無機酸）', effect:'up', explanation:'H/Kシフトにより血清K上昇。'},
+  {name:'腎不全（急性/末期）', effect:'up', explanation:'K排泄障害。'},
+  {name:'副腎不全（Addison病）', effect:'up', explanation:'アルドステロン欠乏。'},
+  {name:'インスリン投与', effect:'down', explanation:'細胞内K取り込み促進。'},
+  {name:'β2刺激薬（サルブタモール）', effect:'down', explanation:'Na/K-ATPase刺激→細胞内移行。'},
+  {name:'ループ利尿薬（フロセミド）', effect:'down', explanation:'尿細管でK排泄増加。'},
+  {name:'サイアザイド系利尿薬', effect:'down', explanation:'遠位尿細管でK排泄増加。'},
+  {name:'アムホテリシンB', effect:'down', explanation:'尿細管障害→K喪失。'},
+  {name:'下痢', effect:'down', explanation:'腸管からK喪失。'},
+  {name:'嘔吐（持続）', effect:'down', explanation:'アルカローシス＋二次性アルドステロン増加でK排泄↑。'},
+  {name:'原発性アルドステロン症', effect:'down', explanation:'アルドステロン過剰→K排泄増加。'},
+  {name:'代謝性アルカローシス', effect:'down', explanation:'H/Kシフトで血清K低下。'}
+];
+
+let current=null, answered=false, correct=0, total=0;
+
+function startGame(){
+  document.getElementById('startScreen').style.display='none';
+  nextQuestion();
+}
+
+function nextQuestion(){
+  answered=false;
+  const q = data[Math.floor(Math.random()*data.length)];
+  current=q;
+  document.getElementById('item').textContent=q.name;
+  document.getElementById('result').textContent='';
+  document.getElementById('result').className='';
+  document.getElementById('explanation').textContent='';
+  document.getElementById('nextBtn').style.display='none';
+}
+
+function answer(choice){
+  if(answered) return;
+  answered=true;
+  total++;
+  const ok = (choice===current.effect);
+  if(ok) { correct++; celebrate(); }
+  const resultEl=document.getElementById('result');
+  resultEl.textContent = ok?'🎉 正解！':'❌ 不正解';
+  resultEl.className = ok?'ok':'ng';
+  document.getElementById('explanation').textContent='【解説】'+current.explanation;
+  document.getElementById('correct').textContent=correct;
+  document.getElementById('total').textContent=total;
+  const rate = total? (correct/total*100):0;
+  document.getElementById('scoreBar').style.width = rate+'%';
+  document.getElementById('nextBtn').style.display='inline-block';
+}
+
+// 簡易コンフェッティ
+function celebrate(){
+  for(let i=0;i<25;i++){
+    const span=document.createElement('span');
+    span.className='confetti';
+    span.style.left=Math.random()*100+'%';
+    span.style.setProperty('--c', randomColor());
+    span.style.animationDelay=(Math.random()*0.2)+'s';
+    span.style.transform=`rotate(${Math.random()*360}deg)`;
+    document.getElementById('game').appendChild(span);
+    setTimeout(()=>span.remove(),1200);
+  }
+}
+function randomColor(){
+  const colors=['#ff5e62','#ffd54f','#4ade80','#60a5fa','#a78bfa','#fb7185'];
+  return colors[Math.floor(Math.random()*colors.length)];
+}
+</script>
+</body>
+</html>
