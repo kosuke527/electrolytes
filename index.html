@@ -4,57 +4,28 @@
 <title>電解質ゲーム：カリウム編</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-:root {
-  --ok:#28a745;
-  --ng:#dc3545;
-  --card-bg:#ffffffdd;
-}
+:root { --ok:#28a745; --ng:#dc3545; --card-bg:#ffffffdd; }
 body {
-  margin:0;
-  font-family: "Helvetica Neue",system-ui,sans-serif;
-  background: linear-gradient(135deg,#89f7fe,#66a6ff);
-  min-height:100vh;
-  display:flex;
-  justify-content:center;
-  align-items:flex-start;
+  margin:0; font-family:system-ui,sans-serif;
+  background:linear-gradient(135deg,#89f7fe,#66a6ff);
+  min-height:100vh; display:flex; justify-content:center; align-items:flex-start;
   padding:1rem;
 }
 h1 { margin:0 0 .5rem; font-size:1.5rem; text-align:center; }
 #game {
-  width:100%; max-width:650px;
-  background:var(--card-bg);
-  backdrop-filter: blur(6px);
-  border-radius:18px;
-  padding:1rem 1.2rem 2rem;
-  box-shadow:0 8px 24px rgba(0,0,0,.2);
-  position:relative;
-  overflow:hidden;
+  width:100%; max-width:650px; background:var(--card-bg); backdrop-filter:blur(6px);
+  border-radius:18px; padding:1rem 1.2rem 2rem; box-shadow:0 8px 24px rgba(0,0,0,.2);
+  position:relative; overflow:hidden;
 }
 #desc { margin:.2rem 0 1rem; font-size:.95rem; color:#333;}
-#scoreBarWrapper {
-  background:#eee; border-radius:999px; overflow:hidden;
-  height:14px; margin:.5rem 0 1rem;
-}
+#scoreBarWrapper { background:#eee; border-radius:999px; overflow:hidden; height:14px; margin:.5rem 0 1rem;}
 #scoreBar {height:100%; width:0%; background:linear-gradient(90deg,#4ade80,#16a34a);}
 #card {text-align:center;}
-#item {
-  font-size:1.3rem; font-weight:600;
-  min-height:2.6rem; padding:.4rem .5rem; border-radius:6px;
-  background:#f5f7ff;
-  display:flex; align-items:center; justify-content:center;
-}
+#item { font-size:1.3rem; font-weight:600; min-height:2.6rem; padding:.4rem .5rem; border-radius:6px; background:#f5f7ff; display:flex; align-items:center; justify-content:center;}
 .buttons { margin-top:.7rem; }
 button {
-  cursor:pointer;
-  border:none;
-  border-radius:8px;
-  padding:.6rem 1.1rem;
-  font-size:1.05rem;
-  margin:.2rem .3rem;
-  font-weight:600;
-  background:#3478f6;
-  color:#fff;
-  transition:.2s;
+  cursor:pointer; border:none; border-radius:8px; padding:.6rem 1.1rem; font-size:1.05rem;
+  margin:.2rem .3rem; font-weight:600; background:#3478f6; color:#fff; transition:.2s;
 }
 button:hover { filter:brightness(1.1); }
 button.secondary { background:#888; }
@@ -65,36 +36,37 @@ button.secondary { background:#888; }
 footer { margin-top:1rem; font-size:.7rem; color:#555; text-align:center;}
 #scoreText { font-size:.9rem; font-weight:600; }
 
-#startScreen {
-  position:absolute; inset:0;
-  background:linear-gradient(135deg,#ffe259,#ffa751);
-  display:flex; flex-direction:column;
-  justify-content:center; align-items:center;
-  gap:1rem; text-align:center;
+.screen {
+  position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center;
+  align-items:center; gap:1rem; text-align:center; padding:1rem;
 }
-#startScreen h2 {margin:0;}
-#startScreen button {background:#ff5e62;}
+#startScreen { background:linear-gradient(135deg,#ffe259,#ffa751); }
+#endScreen  { background:linear-gradient(135deg,#a1ffce,#faffd1); display:none; }
+.screen button {background:#ff5e62;}
 .confetti {
-  position:absolute; width:10px; height:10px;
-  background:var(--c);
-  top:-10px; left:0;
-  opacity:.9; border-radius:2px;
-  animation:fall 1s linear forwards;
+  position:absolute; width:10px; height:10px; background:var(--c);
+  top:-10px; left:0; opacity:.9; border-radius:2px; animation:fall 1s linear forwards;
 }
-@keyframes fall {
-  to { transform:translateY(350px) rotate(720deg); opacity:0; }
-}
+@keyframes fall { to { transform:translateY(350px) rotate(720deg); opacity:0; } }
 </style>
 <body>
 <div id="game">
-  <div id="startScreen">
+  <!-- スタート画面 -->
+  <div id="startScreen" class="screen">
     <h2>🎮 電解質ゲーム：カリウム編</h2>
-    <p style="max-width:320px">病態や薬剤が出たら、血清カリウムを<br><b>上げる</b>か<b>下げる</b>かタップして答えよう！</p>
+    <p style="max-width:320px">全20問！ 病態/薬剤が出たら血清カリウムを<br><b>上げる</b>か<b>下げる</b>か答えよう。100点満点を目指せ！</p>
     <button onclick="startGame()">ゲーム開始 ▶</button>
+  </div>
+  <!-- 終了画面 -->
+  <div id="endScreen" class="screen">
+    <h2>🏁 結果</h2>
+    <p id="finalScore" style="font-size:1.2rem;font-weight:600;"></p>
+    <p id="finalDetail"></p>
+    <button onclick="restartGame()">もう一度プレイ</button>
   </div>
 
   <h1>電解質ゲーム：カリウム編</h1>
-  <div id="desc">表示された <strong>病態 / 薬剤</strong> は血清カリウムを「上げる」か「下げる」か？</div>
+  <div id="desc">表示された <strong>病態 / 薬剤</strong> は血清カリウムを「上げる」か「下げる」か？（<span id="remain"></span>）</div>
   <div id="scoreText">スコア: <span id="correct">0</span>/<span id="total">0</span></div>
   <div id="scoreBarWrapper"><div id="scoreBar"></div></div>
 
@@ -113,6 +85,9 @@ footer { margin-top:1rem; font-size:.7rem; color:#555; text-align:center;}
 </div>
 
 <script>
+const TOTAL_QUESTIONS = 20; // ここで総問題数
+const POINT_PER_Q = 5;      // 1問5点 → 20問で100点
+
 // データ
 const data = [
   {name:'ACE阻害薬（エナラプリル等）', effect:'up', explanation:'アルドステロン低下→K排泄低下で高カリウム血症。'},
@@ -142,26 +117,45 @@ let current=null, answered=false, correct=0, total=0;
 
 function startGame(){
   document.getElementById('startScreen').style.display='none';
+  updateRemain();
   nextQuestion();
 }
 
+function restartGame(){
+  correct=0; total=0;
+  document.getElementById('correct').textContent=0;
+  document.getElementById('total').textContent=0;
+  document.getElementById('scoreBar').style.width='0%';
+  document.getElementById('endScreen').style.display='none';
+  document.getElementById('startScreen').style.display='flex';
+}
+
+function updateRemain(){
+  const remain = TOTAL_QUESTIONS - total;
+  document.getElementById('remain').textContent = `残り ${remain} 問`;
+}
+
 function nextQuestion(){
+  if(total >= TOTAL_QUESTIONS){
+    endGame();
+    return;
+  }
   answered=false;
-  const q = data[Math.floor(Math.random()*data.length)];
-  current=q;
-  document.getElementById('item').textContent=q.name;
+  current = data[Math.floor(Math.random()*data.length)];
+  document.getElementById('item').textContent=current.name;
   document.getElementById('result').textContent='';
   document.getElementById('result').className='';
   document.getElementById('explanation').textContent='';
   document.getElementById('nextBtn').style.display='none';
+  updateRemain();
 }
 
 function answer(choice){
-  if(answered) return;
+  if(answered || total >= TOTAL_QUESTIONS) return;
   answered=true;
   total++;
   const ok = (choice===current.effect);
-  if(ok) { correct++; celebrate(); }
+  if(ok){ correct++; celebrate(); }
   const resultEl=document.getElementById('result');
   resultEl.textContent = ok?'🎉 正解！':'❌ 不正解';
   resultEl.className = ok?'ok':'ng';
@@ -171,11 +165,23 @@ function answer(choice){
   const rate = total? (correct/total*100):0;
   document.getElementById('scoreBar').style.width = rate+'%';
   document.getElementById('nextBtn').style.display='inline-block';
+  if(total === TOTAL_QUESTIONS){
+    document.getElementById('nextBtn').textContent='結果を見る ▶';
+  } else {
+    document.getElementById('nextBtn').textContent='次の問題 ▶';
+  }
 }
 
-// 簡易コンフェッティ
+function endGame(){
+  // 点数計算
+  const score = correct * POINT_PER_Q; // 100点満点
+  document.getElementById('finalScore').textContent = `あなたの得点：${score} 点 / 100点`;
+  document.getElementById('finalDetail').textContent = `正解数 ${correct} / ${TOTAL_QUESTIONS}（正答率 ${(correct/TOTAL_QUESTIONS*100).toFixed(1)}%）`;
+  document.getElementById('endScreen').style.display='flex';
+}
+
 function celebrate(){
-  for(let i=0;i<25;i++){
+  for(let i=0;i<20;i++){
     const span=document.createElement('span');
     span.className='confetti';
     span.style.left=Math.random()*100+'%';
